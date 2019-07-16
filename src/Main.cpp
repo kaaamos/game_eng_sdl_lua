@@ -1,11 +1,12 @@
 #include "./Game.h"
 #include "./Constants.h"
+#include <iostream>
 
 int main(int argc, char *args[])
 {
     Game *game = new Game();
     game->Initialize(800, 600);
-    
+
     while(game->IsRunning())
     {
         game->ProcessInput();

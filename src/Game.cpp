@@ -1,7 +1,14 @@
 #include <iostream>
 #include "./Constants.h"
 #include "./Game.h"
+#include "./AssetManager.h"
+#include "./components/TransformComponent.h"
+#include "./components/SpriteComponent.h"
 #include "../lib/glm/glm.hpp"
+
+EntityManager manager;
+AssetManager* Game::assetManager = new AssetManager(&manager);
+SDL_Renderer* Game::renderer;
 
 Game::Game()
 {
@@ -16,9 +23,6 @@ bool Game::IsRunning() const
 {
     return this->isRunning;
 }
-
-glm::vec2 projectilePos = glm::vec2(0.0f, 0.0f);
-glm::vec2 projectileVel = glm::vec2(20.0f, 20.0f);
 
 void Game::Initialize(int width, int height)
 {
@@ -51,8 +55,20 @@ void Game::Initialize(int width, int height)
         return;
     }
 
+    LoadLevel(0);
+
     ticksLastFrame = 0;
     isRunning = true;
+}
+
+void Game::LoadLevel(int levelNumber)
+{
+    std::string textureFilePath("./assets/images/tank-big-right.png");
+    assetManager->AddTexture("tank-image", textureFilePath.c_str());
+
+    Entity& newEntity(manager.AddEntity("tank"));
+    newEntity.AddComponent<TransformComponent>(0, 0, 20, 20, 32, 32, 1);
+    newEntity.AddComponent<SpriteComponent>("tank-image");
 }
 
 void Game::ProcessInput()
@@ -85,11 +101,7 @@ void Game::Update()
     // Sets the new ticks for the current frame to be used in the next pass
     ticksLastFrame = SDL_GetTicks();
 
-    // Use deltaTime to update my game objects
-    projectilePos = glm::vec2(
-        projectilePos.x + projectileVel.x * deltaTime,
-        projectilePos.y + projectileVel.y * deltaTime
-    );
+    manager.Update(deltaTime);
 }
 
 void Game::Render()
@@ -100,16 +112,12 @@ void Game::Render()
     // Clear the back buffer
     SDL_RenderClear(renderer);
 
-    // Draw game objects
-    SDL_Rect projectile {
-        (int)projectilePos.x,
-        (int)projectilePos.y,
-        10,
-        10
-    };
+    if(manager.HasNoEntities())
+    {
+        return;
+    }
 
-    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-    SDL_RenderFillRect(renderer, &projectile);
+    manager.Render();
 
     // Swap front and back buffers
     SDL_RenderPresent(renderer);
